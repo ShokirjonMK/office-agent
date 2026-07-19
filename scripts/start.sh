@@ -58,6 +58,13 @@ if [ "${AUTOSCALE:-0}" = "1" ]; then
     start_bg autoscaler node "$ROOT/scripts/autoscaler.mjs"
 fi
 
+if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_OWNER_ID:-}" ]; then
+  say "Starting Telegram firm bot"
+  PAPERCLIP_API="$PAPERCLIP_API" COMPANY="${COMPANY:-}" \
+    TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" TELEGRAM_OWNER_ID="$TELEGRAM_OWNER_ID" \
+    start_bg telegram node "$ROOT/telegram/firm-bot.mjs"
+fi
+
 cat <<EOF
 
 \033[1;32mAll systems go.\033[0m

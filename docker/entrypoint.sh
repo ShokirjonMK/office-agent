@@ -46,6 +46,11 @@ log "Exposing services via socat (claw3d :$PUBLIC_CLAW3D_PORT, paperclip :$PUBLI
 socat TCP-LISTEN:"$PUBLIC_CLAW3D_PORT",fork,reuseaddr TCP:127.0.0.1:"$CLAW3D_PORT" & PID_SX1=$!
 socat TCP-LISTEN:"$PUBLIC_PAPERCLIP_PORT",fork,reuseaddr TCP:127.0.0.1:"$PAPERCLIP_PORT" & PID_SX2=$!
 
+if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_OWNER_ID:-}" ]; then
+  log "Starting Telegram firm bot"
+  node telegram/firm-bot.mjs & PID_TG=$!
+fi
+
 log "Ready — office http://localhost:$CLAW3D_PORT · dashboard http://localhost:$PAPERCLIP_PORT (publish 3000:$PUBLIC_CLAW3D_PORT, 3100:$PUBLIC_PAPERCLIP_PORT)"
 
 # Exit (and let the container restart) if any core service dies.

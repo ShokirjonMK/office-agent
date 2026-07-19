@@ -4,8 +4,10 @@
 #   open http://localhost:3000  (office)  and  http://localhost:3100  (dashboard)
 #
 # Agents use Claude Code. Provide auth ONE of two ways:
-#   1) mount your host Claude login:  ~/.claude  (uncomment the volume below), or
-#   2) set ANTHROPIC_API_KEY in a .env file next to this compose file.
+#   1) mount your host Claude login (Max/Team/Pro subscription — NO API key):
+#      the ~/.claude volume below is enabled by default. Run `claude` once on the
+#      host and log in first. Mounted read-write so the access token can refresh.
+#   2) or set ANTHROPIC_API_KEY in a .env file next to this compose file.
 
 services:
   office-agent:
@@ -25,10 +27,12 @@ services:
       AUTOSCALE: "${AUTOSCALE:-0}"
       AUTOSCALE_MAX: "${AUTOSCALE_MAX:-5}"
       AUTOSCALE_PER_AGENT: "${AUTOSCALE_PER_AGENT:-3}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"   # optional: control the firm from Telegram
+      TELEGRAM_OWNER_ID: "${TELEGRAM_OWNER_ID:-}"
       # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"   # option 2 for Claude auth
     volumes:
       - office_data:/home/node/.paperclip          # persist company/agents/db
-      # - ${HOME}/.claude:/home/node/.claude:ro     # option 1: reuse host Claude login
+      - ${HOME}/.claude:/home/node/.claude          # Claude subscription login (rw for token refresh)
 
 volumes:
   office_data:

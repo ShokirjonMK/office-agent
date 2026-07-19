@@ -3,7 +3,7 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN="$ROOT/run"
-for name in autoscaler bridge claw3d paperclip; do
+for name in telegram autoscaler bridge claw3d paperclip; do
   pidfile="$RUN/$name.pid"
   if [ -f "$pidfile" ]; then
     pid="$(cat "$pidfile")"
