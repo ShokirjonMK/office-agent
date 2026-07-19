@@ -14,9 +14,9 @@ services:
     container_name: office-agent
     restart: unless-stopped
     ports:
-      - "3000:3000"     # 3D office
-      - "3100:3100"     # dashboard / API
-      - "18789:18789"   # bridge (WebSocket) — only needed for remote office clients
+      - "3000:8000"     # 3D office   (host 3000 -> socat -> container 3000)
+      - "3100:8100"     # dashboard   (host 3100 -> socat -> container 3100)
+      # bridge (18789) stays internal; Claw3D reaches it over loopback.
     environment:
       PAPERCLIP_PORT: "3100"
       CLAW3D_PORT: "3000"
@@ -27,8 +27,8 @@ services:
       AUTOSCALE_PER_AGENT: "${AUTOSCALE_PER_AGENT:-3}"
       # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"   # option 2 for Claude auth
     volumes:
-      - office_data:/root/.paperclip          # persist company/agents/db
-      # - ${HOME}/.claude:/root/.claude:ro     # option 1: reuse host Claude login
+      - office_data:/home/node/.paperclip          # persist company/agents/db
+      # - ${HOME}/.claude:/home/node/.claude:ro     # option 1: reuse host Claude login
 
 volumes:
   office_data:

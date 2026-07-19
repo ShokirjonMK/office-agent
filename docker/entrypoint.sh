@@ -38,7 +38,15 @@ if [ "${AUTOSCALE:-0}" = "1" ]; then
   node scripts/autoscaler.mjs & PID_AS=$!
 fi
 
-log "Ready — office http://localhost:$CLAW3D_PORT · dashboard http://localhost:$PAPERCLIP_PORT"
+# Paperclip's trusted mode only binds container-loopback; re-expose services on
+# 0.0.0.0 via socat so `docker -p` publishing reaches them.
+PUBLIC_CLAW3D_PORT="${PUBLIC_CLAW3D_PORT:-8000}"
+PUBLIC_PAPERCLIP_PORT="${PUBLIC_PAPERCLIP_PORT:-8100}"
+log "Exposing services via socat (claw3d :$PUBLIC_CLAW3D_PORT, paperclip :$PUBLIC_PAPERCLIP_PORT)"
+socat TCP-LISTEN:"$PUBLIC_CLAW3D_PORT",fork,reuseaddr TCP:127.0.0.1:"$CLAW3D_PORT" & PID_SX1=$!
+socat TCP-LISTEN:"$PUBLIC_PAPERCLIP_PORT",fork,reuseaddr TCP:127.0.0.1:"$PAPERCLIP_PORT" & PID_SX2=$!
+
+log "Ready — office http://localhost:$CLAW3D_PORT · dashboard http://localhost:$PAPERCLIP_PORT (publish 3000:$PUBLIC_CLAW3D_PORT, 3100:$PUBLIC_PAPERCLIP_PORT)"
 
 # Exit (and let the container restart) if any core service dies.
 wait -n "$PID_PC" "$PID_C3" "$PID_BR"
