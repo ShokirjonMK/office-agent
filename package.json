@@ -1,0 +1,17 @@
+{
+  "name": "office-agent",
+  "version": "1.0.0",
+  "description": "A visual, self-hosted AI software firm: Paperclip (orchestration) + Claw3D (3D office) wired together with a live bridge and a ready-made IT-firm agent team.",
+  "type": "module",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "start": "bash scripts/start.sh",
+    "stop": "bash scripts/stop.sh",
+    "provision": "node scripts/provision.mjs"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShokirjonMK/office-agent.git"
+  }
+}

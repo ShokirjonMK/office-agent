@@ -1,0 +1,15 @@
+# Cloned upstream repos (fetched by scripts/setup.sh — not vendored in git)
+/vendor/
+
+# Runtime
+/logs/
+/run/
+node_modules/
+
+# Local config / secrets
+.env
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
