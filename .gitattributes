@@ -1,0 +1,13 @@
+# Guarantee LF for everything text so the stack runs on Linux servers.
+* text=auto eol=lf
+*.sh   text eol=lf
+*.mjs  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+
+# Binary assets
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
