@@ -1,0 +1,34 @@
+# office-agent — one-command containerized stack.
+#
+#   docker compose up -d --build
+#   open http://localhost:3000  (office)  and  http://localhost:3100  (dashboard)
+#
+# Agents use Claude Code. Provide auth ONE of two ways:
+#   1) mount your host Claude login:  ~/.claude  (uncomment the volume below), or
+#   2) set ANTHROPIC_API_KEY in a .env file next to this compose file.
+
+services:
+  office-agent:
+    build: .
+    image: office-agent
+    container_name: office-agent
+    restart: unless-stopped
+    ports:
+      - "3000:3000"     # 3D office
+      - "3100:3100"     # dashboard / API
+      - "18789:18789"   # bridge (WebSocket) — only needed for remote office clients
+    environment:
+      PAPERCLIP_PORT: "3100"
+      CLAW3D_PORT: "3000"
+      GATEWAY_PORT: "18789"
+      COMPANY: "${COMPANY:-}"
+      AUTOSCALE: "${AUTOSCALE:-0}"
+      AUTOSCALE_MAX: "${AUTOSCALE_MAX:-5}"
+      AUTOSCALE_PER_AGENT: "${AUTOSCALE_PER_AGENT:-3}"
+      # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"   # option 2 for Claude auth
+    volumes:
+      - office_data:/root/.paperclip          # persist company/agents/db
+      # - ${HOME}/.claude:/root/.claude:ro     # option 1: reuse host Claude login
+
+volumes:
+  office_data:

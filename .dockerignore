@@ -1,0 +1,8 @@
+vendor/
+logs/
+run/
+node_modules/
+.git/
+.env
+*.local
+docs/img/

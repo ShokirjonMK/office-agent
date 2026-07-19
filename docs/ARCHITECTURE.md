@@ -76,17 +76,21 @@ whole firm keeps pulling work as it arrives.
 Parallelism scales with the backlog: more delegated issues → more agents running
 at once (up to each agent's `maxConcurrentRuns`).
 
-## Optional: an autoscaler
+## The autoscaler
 
-Native Paperclip has a **fixed roster** that runs in parallel — it does not create
-new agents under load. If you want the roster itself to grow (e.g. spin up extra
-"Backend Dev #2/#3" when the backend backlog is deep), add a small loop that:
+Native Paperclip runs a **fixed roster** in parallel — it doesn't create new
+agents under load. `scripts/autoscaler.mjs` adds that: an opt-in loop
+(`AUTOSCALE=1`) that keeps a dynamic worker pool sized to the backlog.
 
-1. Polls open issues per role/label (`GET /companies/<id>/issues`).
-2. When a role's queue exceeds a threshold, clones that agent via
-   `POST /companies/<id>/agents` (same adapter, `reportsTo` the Team Lead).
-3. Scales back down (pause/delete) when the queue drains.
+Each cycle (default 20s) it:
 
-The bridge already refreshes every 5s, so any agents an autoscaler adds show up in
-the office automatically. This is intentionally left as an opt-in extension.
+1. Counts open (non-terminal) issues via `GET /companies/<id>/issues`.
+2. Computes `desired = clamp(ceil(backlog / PER_AGENT), MIN, MAX)`.
+3. If short, clones engineers via `POST /companies/<id>/agents` (same adapter,
+   `reportsTo` the Team Lead, tagged `metadata.autoscaled=true`).
+4. If over, removes **idle** tagged workers after a cooldown
+   (`DELETE /agents/<id>`), so only auto-created agents are ever touched.
+
+The bridge refreshes every 5s, so pool changes show up in the office
+automatically. Verified logic (dry-run): `backlog=4, per=2 → desired=2`.
 ```

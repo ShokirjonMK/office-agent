@@ -50,6 +50,14 @@ say "Starting the Paperclip↔Claw3D bridge (:$GATEWAY_PORT)"
 PAPERCLIP_API="$PAPERCLIP_API" COMPANY="${COMPANY:-}" DEMO_ADAPTER_PORT="$GATEWAY_PORT" \
   start_bg bridge node "$VENDOR/claw3d/server/paperclip-gateway-adapter.js"
 
+if [ "${AUTOSCALE:-0}" = "1" ]; then
+  say "Starting the autoscaler (dynamic worker pool)"
+  PAPERCLIP_API="$PAPERCLIP_API" COMPANY="${COMPANY:-}" \
+    AUTOSCALE_MIN="${AUTOSCALE_MIN:-0}" AUTOSCALE_MAX="${AUTOSCALE_MAX:-5}" \
+    AUTOSCALE_PER_AGENT="${AUTOSCALE_PER_AGENT:-3}" AUTOSCALE_INTERVAL_MS="${AUTOSCALE_INTERVAL_MS:-20000}" \
+    start_bg autoscaler node "$ROOT/scripts/autoscaler.mjs"
+fi
+
 cat <<EOF
 
 \033[1;32mAll systems go.\033[0m

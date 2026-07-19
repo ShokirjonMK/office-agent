@@ -35,6 +35,20 @@ In the office, click **Connect** (the *OpenClaw* backend and URL `ws://localhost
 
 Stop everything with `./scripts/stop.sh`. Logs live in `logs/`.
 
+### 🐳 Or with Docker
+
+```bash
+git clone https://github.com/ShokirjonMK/office-agent.git
+cd office-agent
+# give agents Claude auth: either mount ~/.claude (see docker-compose.yml)
+# or put ANTHROPIC_API_KEY in a .env file next to compose.
+docker compose up -d --build
+```
+
+Same URLs (`:3000`, `:3100`). Company/agents/DB persist in the `office_data`
+volume. The image bundles Paperclip + Claw3D + the bridge, so it boots straight
+into a ready firm.
+
 ### Tez boshlash (o'zbekcha)
 
 ```bash
@@ -91,8 +105,20 @@ The bridge polls Paperclip every 5 seconds, so the office reflects reality:
 - **Change status / pause / resume** → reflected live.
 - **More work → more agents active at once** (delegation + heartbeats run them in parallel).
 
-Want the roster to *auto-grow* under load (spawn extra devs when the backlog is
-deep)? That's an opt-in autoscaler — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+### Autoscaler (opt-in)
+
+Turn on a **dynamic worker pool** that grows and shrinks with the backlog:
+
+```bash
+AUTOSCALE=1 AUTOSCALE_MAX=8 AUTOSCALE_PER_AGENT=3 ./scripts/start.sh
+# or set these in .env, or AUTOSCALE=1 in docker-compose
+```
+
+Each cycle it counts open (non-terminal) issues and keeps roughly one extra
+worker per `AUTOSCALE_PER_AGENT` issues, between `AUTOSCALE_MIN` and
+`AUTOSCALE_MAX`. New workers are engineers under the Team Lead, tagged so only
+they are managed; idle extras are removed after a cooldown. They appear/disappear
+in the 3D office automatically. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -167,10 +193,12 @@ office-agent/
 ├── bridge/paperclip-gateway-adapter.js   # Paperclip -> Claw3D live bridge
 ├── scripts/
 │   ├── setup.sh                # clone + install + wire + patch
-│   ├── start.sh                # run everything + provision
+│   ├── start.sh                # run everything + provision (+ optional autoscaler)
 │   ├── stop.sh
 │   ├── provision.mjs           # create/repair the IT-firm team (idempotent)
+│   ├── autoscaler.mjs          # dynamic worker pool (opt-in)
 │   └── apply-windows-patch.mjs # Windows-only agent spawn fix
+├── Dockerfile · docker-compose.yml · docker/entrypoint.sh
 ├── docs/ARCHITECTURE.md
 ├── .env.example
 └── vendor/                     # Paperclip & Claw3D (cloned by setup, git-ignored)
