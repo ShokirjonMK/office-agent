@@ -18,13 +18,16 @@ async function get(p) {
   return r.json();
 }
 async function post(p, body) {
+  return send("POST", p, body);
+}
+async function send(method, p, body) {
   const r = await fetch(`${API}${p}`, {
-    method: "POST",
+    method,
     headers: { accept: "application/json", "content-type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });
   const t = await r.text();
-  if (!r.ok) throw new Error(`POST ${p} -> ${r.status}: ${t.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`${method} ${p} -> ${r.status}: ${t.slice(0, 300)}`);
   return t ? JSON.parse(t) : null;
 }
 
@@ -66,20 +69,25 @@ const baseAdapter = {
   runtimeConfig: { heartbeat: { maxConcurrentRuns: 5 } },
 };
 
-// key -> definition. boss references an earlier key, or "CEO" for the root.
+// key -> definition. boss references an earlier key, or null for the root.
+// `cap` (capabilities) doubles as each agent's operating procedure and encodes
+// the automatic pipeline: CEO -> PM -> Team Lead/devs -> QA (loop) -> PM report.
+// Paperclip's managed instructions already grant the delegation tools (create
+// child issue, assign, comment, set status, add blockers); these caps tell each
+// role how to use them. Delegate DOWN the reporting line, report UP.
 const TEAM = [
-  { key: "CEO",    name: "CEO",                  role: "ceo",      icon: "crown",      boss: null,   cap: "Runs the company. Sets goals, approves strategy, delegates to CTO and Product Manager, and keeps everyone aligned to the mission." },
-  { key: "CTO",    name: "CTO",                  role: "cto",      icon: "cpu",        boss: "CEO",  cap: "Owns technical strategy and architecture. Delegates to Team Lead, DevOps, and Security." },
-  { key: "PM",     name: "Product Manager",      role: "pm",       icon: "target",     boss: "CEO",  cap: "Owns roadmap, requirements, priorities. Turns goals into well-scoped issues and coordinates Design + Engineering." },
-  { key: "DESIGN", name: "Designer",             role: "designer", icon: "wand",       boss: "PM",   cap: "Owns UX/UI, wireframes, design system, visual polish. Hands specs to Frontend." },
-  { key: "LEAD",   name: "Team Lead",            role: "engineer", icon: "star",       boss: "CTO",  cap: "Leads the dev team, breaks work into tasks, reviews code, unblocks devs, reports to CTO." },
-  { key: "FE",     name: "Frontend Dev",         role: "engineer", icon: "code",       boss: "LEAD", cap: "Builds UI/frontend, implements designs, client-side state and API integration." },
-  { key: "BE",     name: "Backend Dev",          role: "engineer", icon: "database",   boss: "LEAD", cap: "Builds backend/APIs, data models, business logic, auth, integrations." },
-  { key: "FS",     name: "Full-stack Dev",       role: "engineer", icon: "hexagon",    boss: "LEAD", cap: "Ships end-to-end features across frontend and backend; fills gaps." },
-  { key: "QA",     name: "QA Engineer",          role: "qa",       icon: "bug",        boss: "LEAD", cap: "Writes/runs tests, verifies features end-to-end, reproduces bugs, gates releases." },
-  { key: "REFA",   name: "Refactoring Engineer", role: "engineer", icon: "wrench",     boss: "LEAD", cap: "Improves code quality: refactors, removes duplication, simplifies, enforces patterns." },
-  { key: "DEVOPS", name: "DevOps Engineer",      role: "devops",   icon: "git-branch", boss: "CTO",  cap: "Owns CI/CD, builds, deployments, environments, containers, infra reliability." },
-  { key: "SEC",    name: "Security Engineer",    role: "security", icon: "shield",     boss: "CTO",  cap: "Owns security review, threat modeling, dependency/secret hygiene, hardening." },
+  { key: "CEO",    name: "CEO",                  role: "ceo",      icon: "crown",      boss: null,   cap: "Runs the company. When given a high-level goal, do NOT implement it: create one child issue for the goal, assign it to the Product Manager, and blockParentUntilDone. Review the PM's final report and close the goal. Steer, don't code." },
+  { key: "CTO",    name: "CTO",                  role: "cto",      icon: "cpu",        boss: "CEO",  cap: "Owns architecture and technical direction. Route technical work to the Team Lead, DevOps, or Security via assigned child issues; keep the tech coherent; report up to the CEO." },
+  { key: "PM",     name: "Product Manager",      role: "pm",       icon: "target",     boss: "CEO",  cap: "When assigned a goal: (1) break it into implementation subtasks — one child issue each, with acceptance criteria, assigned to the Team Lead (or the right engineer), blockParentUntilDone; (2) create a final QA-verification child issue assigned to the QA Engineer, blocked by all implementation issues; (3) do NOT code — monitor status; (4) when all children are done and QA passed, write a concise final report comment on the parent and mark it done. If QA bounced work back, wait for the re-work first." },
+  { key: "DESIGN", name: "Designer",             role: "designer", icon: "wand",       boss: "PM",   cap: "Produces UX/UI specs and design notes for assigned issues, then hands them to the Frontend Dev via an assigned child issue. Marks the issue done once the spec is delivered." },
+  { key: "LEAD",   name: "Team Lead",            role: "engineer", icon: "star",       boss: "CTO",  cap: "When assigned an implementation issue, split it into child issues and assign each to the right engineer — Frontend (UI), Backend (API/data), Full-stack (end-to-end). Review completed work, unblock engineers, report status up to the PM. Minimal coding yourself." },
+  { key: "FE",     name: "Frontend Dev",         role: "engineer", icon: "code",       boss: "LEAD", cap: "Implements assigned UI/frontend issues in the project workspace: write/modify code, run it, verify against acceptance criteria, then mark the issue done with a comment on what changed and how you tested. Comment blockers instead of guessing." },
+  { key: "BE",     name: "Backend Dev",          role: "engineer", icon: "database",   boss: "LEAD", cap: "Implements assigned backend/API/data/business-logic issues in the workspace, runs and verifies them, then marks the issue done with a comment on what changed and how tested. Comment blockers instead of guessing." },
+  { key: "FS",     name: "Full-stack Dev",       role: "engineer", icon: "hexagon",    boss: "LEAD", cap: "Takes end-to-end feature issues across frontend and backend, implements and verifies them in the workspace, then marks done with notes." },
+  { key: "QA",     name: "QA Engineer",          role: "qa",       icon: "bug",        boss: "LEAD", cap: "The quality loop. When a verification issue's blockers are done, exercise the feature end-to-end against the acceptance criteria. PASS -> mark the issue done with a PASS comment (unblocks the parent). FAIL -> do NOT fix it yourself: create a bounce-back child issue assigned to the developer who did the work with failure + repro steps, keep the verification blocked until fixed, then re-verify." },
+  { key: "REFA",   name: "Refactoring Engineer", role: "engineer", icon: "wrench",     boss: "LEAD", cap: "After features land, refactors to remove duplication, simplify, and enforce patterns WITHOUT changing behavior. Verifies tests still pass, marks done with notes." },
+  { key: "DEVOPS", name: "DevOps Engineer",      role: "devops",   icon: "git-branch", boss: "CTO",  cap: "Owns CI/CD, builds, deployments, environments, containers. Performs assigned ops tasks, verifies the result, marks done with notes." },
+  { key: "SEC",    name: "Security Engineer",    role: "security", icon: "shield",     boss: "CTO",  cap: "Reviews changes for security issues, dependency/secret hygiene, and hardening. Files issues for problems and verifies fixes." },
 ];
 
 async function main() {
