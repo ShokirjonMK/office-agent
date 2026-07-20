@@ -8,7 +8,9 @@
 - **[Claw3D](https://github.com/iamlukethedev/claw3d)** — the *office*: a live 3D workspace where you watch agents work.
 - **A bridge + a ready-made IT‑firm team** — so the office shows your *real* Paperclip agents (not a demo), and chatting an agent files a *real* task.
 
-Clone it, run `setup` then `start`, open the office — and a full software team (CEO, CTO, PM, Team Lead, Frontend, Backend, Full‑stack, QA, Refactoring, DevOps, Security, Designer) is standing at their desks, ready to work in a continuous loop.
+Clone it, run `setup` then `start`, open the office — and a full software team (CEO, CTO, PM, Team Lead, Senior/Frontend/Backend/Full‑stack Engineers, QA, Refactoring, DevOps, Security, Designer) is standing at their desks, ready to work in a continuous loop.
+
+> 📘 **Full step-by-step usage guide** (launch, connect your repos, switch between projects, assign work, Telegram, troubleshooting): **[docs/GUIDE.md](docs/GUIDE.md)**.
 
 ![The IT firm in the 3D office](docs/img/office-team.jpg)
 
@@ -70,6 +72,7 @@ cd office-agent
 CEO
 ├── CTO
 │   ├── Team Lead
+│   │   ├── Senior Engineer
 │   │   ├── Frontend Dev
 │   │   ├── Backend Dev
 │   │   ├── Full-stack Dev
